@@ -52,7 +52,7 @@ nav.bn .on{color:var(--pri);background:var(--soft)}
 .lg header,.lg nav.bn,.lg #dr{display:none}
 .tg{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#172036;color:#fff;padding:10px 18px;border-radius:99px;font-weight:700;z-index:20}
 @media print{header,nav.bn,#dr,#ov,.np{display:none!important}body{background:#fff;color:#000}.card{box-shadow:none}}
-.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin-top:2px;border:0;background:none;font-size:18px;padding:8px 10px;color:var(--mut);cursor:pointer}
+.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin-top:2px;border:0;background:none;padding:8px 10px;line-height:0;color:var(--ink);opacity:.3;cursor:pointer}.eye:hover{opacity:.6}
 .tag#sy{font-size:12px;padding:9px 13px;cursor:pointer;white-space:nowrap}
 .chip.sel{background:var(--pri);color:#fff;border-color:transparent}.lg main{padding-top:4px;max-width:400px}
 @media(min-width:900px){
@@ -282,8 +282,9 @@ function saveGr(){save();ui.gdone=1;render();scrollTo(0,0)}
 const P_nilai=P.nilai;P.nilai=()=>ui.gdone?`<div class="card" style="text-align:center"><div style="font-size:40px">✅</div><b>Nilai ${esc(ui.title)} tersimpan</b><p style="color:var(--mut)">${esc(nm('cls',ui.cid))} · ${esc(nm('sub',ui.mid))}</p><button class="btn" onclick="ui.title='';ui.gdone=0;render()">+ Input nilai lagi</button><button class="btn g" onclick="ui.gdone=0;render()">Ubah nilai ini</button></div>`:P_nilai();
 const csvX=()=>{if(window.XLSX){try{const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(ui.rows),String(ui.type).slice(0,30));XLSX.writeFile(w,'rekap-'+ui.type+'-'+ui.month+'.xlsx');return}catch(e){}}csv0()};
 const jm=s=>ui.cid==s.cid&&ui.ket=='Hadir'&&(s.mid=='Kokurikuler'?ui.jj=='Kokurikuler':ui.jj!='Kokurikuler'&&ui.mid==s.mid)&&[...(ui.jam||[])].sort((a,b)=>a-b).join()==(s.jam||[]).join();
-function eye(id,b){const i=document.getElementById(id),h=i.type=='password';i.type=h?'text':'password';b.textContent=h?'🙈':'👁️'}
-const eyeF=(id,ac)=>`<span style="position:relative;display:block"><input id="${id}" type="password" autocomplete="${ac}" style="padding-right:46px"><button type="button" class="eye" onclick="eye('${id}',this)" aria-label="Lihat atau sembunyikan password">👁️</button></span>`;
+const SV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',EYE_O=SV+'<path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>',EYE_C=SV+'<path d="M3 10c2.2 3.4 5.4 5 9 5s6.8-1.6 9-5"/><path d="M12 15v3M6.5 13.5l-1.8 2.4M17.5 13.5l1.8 2.4"/></svg>';
+function eye(id,b){const i=document.getElementById(id),h=i.type=='password';i.type=h?'text':'password';b.innerHTML=h?EYE_C:EYE_O}
+const eyeF=(id,ac)=>`<span style="position:relative;display:block"><input id="${id}" type="password" autocomplete="${ac}" style="padding-right:46px"><button type="button" class="eye" onclick="eye('${id}',this)" aria-label="Lihat atau sembunyikan password">${EYE_O}</button></span>`;
 const pwHtml=w=>`<div class="card"${w?' style="margin-top:34px"':''}><b style="font-size:17px">🔒 Ganti password</b><p style="color:var(--mut);margin:6px 0 4px">${w?'Demi keamanan, password sementara dari admin wajib diganti sebelum memakai aplikasi.':'Gunakan minimal 8 karakter.'}</p><label>${w?'Password sementara (dari admin)':'Password lama'}${eyeF('pl','current-password')}</label><label>Password baru (minimal 8 karakter)${eyeF('pb','new-password')}</label><label>Ulangi password baru${eyeF('pu','new-password')}</label><button class="btn" onclick="gantiPw()">Simpan password</button>${w?'<button class="btn g" onclick="logout()">Keluar</button>':''}</div>`;
 async function gantiPw(){const l=$('#pl').value,b=$('#pb').value,u=$('#pu').value;
  if(!l||!b)return toast('Isi semua kolom');if(b.length<8)return toast('Password baru minimal 8 karakter');if(b!==u)return toast('Ulangi password tidak sama');
