@@ -53,12 +53,12 @@ nav.bn .on{color:var(--pri);background:var(--soft)}
 .tg{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#172036;color:#fff;padding:10px 18px;border-radius:99px;font-weight:700;z-index:20}
 @media print{header,nav.bn,#dr,#ov,.np{display:none!important}body{background:#fff;color:#000}.card{box-shadow:none}}
 .tag#sy{font-size:12px;padding:9px 13px;cursor:pointer;white-space:nowrap}
-.chip.sel{background:var(--pri);color:#fff;border-color:transparent}.lg main{padding-top:4px}
+.chip.sel{background:var(--pri);color:#fff;border-color:transparent}.lg main{padding-top:4px;max-width:400px}
 @media(min-width:900px){
 header{padding:12px max(24px,calc((100vw - 1040px)/2))}
 nav.bn{top:calc(66px + env(safe-area-inset-top,0px));bottom:auto;border-top:0;border-bottom:1px solid var(--line);justify-content:center;gap:10px;padding:6px 8px}
 nav.bn button{display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 18px}nav.bn i{display:inline;font-size:18px}
-main{max-width:1040px;padding:62px 24px 40px}.stats,.qa{gap:16px}
+main{max-width:1040px;padding:62px 24px 40px}.lg main{max-width:400px;padding:4px 16px 100px}.stats,.qa{gap:16px}
 }
 </style><script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script></head><body>
 <div id="app"><div id="ov" onclick="tg()"></div>
@@ -116,7 +116,7 @@ P.siswa=()=>{if(!db.cls.length)return need('kelas','kelas');
 return `<div class="card">${sel('Kelas','cid',db.cls)}<label>Nama siswa (satu nama per baris)<textarea id="f1" rows="4" placeholder="Ani&#10;Budi&#10;Citra"></textarea></label><button class="btn" onclick="addStu()">+ Tambah Siswa</button></div>`+
 (stuOf().map((s,i)=>`<div class="item"><div class="av">${i+1}</div><div class="grow"><b>${esc(s.name)}</b></div><button class="x" onclick="del('stu','${s.id}')">🗑</button></div>`).join('')||'<div class="empty">Belum ada siswa di kelas ini.</div>')};
 P.jadwal=()=>{if(!db.cls.length)return need('kelas','kelas');if(!db.sub.length)return need('mapel','sub');
-return `<div class="card"><div class="row2"><label>Hari<select id="jd">${days.slice(1,6).map(d=>`<option>${d}</option>`).join('')}</select></label><label>Jam<input id="jt" placeholder="07.30-08.50"></label></div><div class="row2">${sel('Kelas','cid',db.cls)}${sel('Mapel','mid',db.sub)}</div><button class="btn" onclick="addJad()">+ Tambah Jadwal</button></div>`+
+return `<div class="card"><div class="row2"><label>Hari<select id="jd">${days.slice(1,7).map(d=>`<option>${d}</option>`).join('')}</select></label><label>Jam<input id="jt" placeholder="07.30-08.50"></label></div><div class="row2">${sel('Kelas','cid',db.cls)}${sel('Mapel','mid',db.sub)}</div><button class="btn" onclick="addJad()">+ Tambah Jadwal</button></div>`+
 ([...db.sch].sort((a,b)=>days.indexOf(a.day)-days.indexOf(b.day)||(a.time>b.time?1:-1)).map(s=>`<div class="item"><div class="av">${s.day.slice(0,2)}</div><div class="grow"><b>${esc(nm('sub',s.mid))}</b><small>${s.day} · ${esc(s.time)} · ${esc(nm('cls',s.cid))}</small></div><button class="x" onclick="del('sch','${s.id}')">🗑</button></div>`).join('')||'<div class="empty">Belum ada jadwal.</div>')};
 const akey=()=>[ui.date,ui.cid,db.mode=='mapel'?ui.mid:'harian'].join('|');
 P.absensi=()=>{if(!db.cls.length)return need('kelas','kelas');if(db.mode=='mapel'&&!db.sub.length)return need('mapel','sub');
@@ -245,7 +245,7 @@ function applyJd(){const g={},out=[];
  db.sch=out;const ms=[...new Set(db.jd.map(x=>x[4]).filter(m=>m!='Kokurikuler'))];db.sub=ms.map(n=>({id:n,name:n}))}
 const stuM=f=>{const m=(f||db.mode=='mapel')?String(ui.mid||''):'',a=s=>s.ag||'',L=stuOf();if(/^PAK/i.test(m))return L.filter(s=>/kristen/i.test(a(s)));if(/^Katolik/i.test(m))return L.filter(s=>/katolik/i.test(a(s)));if(/^PAI/i.test(m))return L.filter(s=>!/kristen|katolik/i.test(a(s)));return L};
 const P_jad=P.jadwal;
-P.jadwal=()=>{if(!(db.jd&&db.jd.length))return P_jad();const D=days.slice(1,6),t=days[new Date().getDay()];ui.jh=D.includes(ui.jh)?ui.jh:(D.includes(t)?t:D[0]);const L=db.sch.filter(s=>s.day==ui.jh).sort((a,b)=>a.jam[0]-b.jam[0]);
+P.jadwal=()=>{if(!(db.jd&&db.jd.length))return P_jad();const D=days.slice(1,7),t=days[new Date().getDay()];ui.jh=D.includes(ui.jh)?ui.jh:(D.includes(t)?t:D[0]);const L=db.sch.filter(s=>s.day==ui.jh).sort((a,b)=>a.jam[0]-b.jam[0]);
 return `<div class="card"><div class="chips" style="flex-wrap:wrap">${D.map(d=>`<button class="chip${ui.jh==d?' sel':''}" style="width:auto;padding:0 14px" onclick="ui.jh='${d}';render()">${d}</button>`).join('')}</div></div>`+(L.map(s=>`<div class="item"><div class="av">${s.day.slice(0,2)}</div><div class="grow"><b>${esc(s.mid)}</b><small>${s.time} · ${esc(s.cid)}</small></div></div>`).join('')||`<div class="empty">Tidak ada jadwal pada hari ${ui.jh}.</div>`)};
 const okey=()=>[ui.date,ui.cid,(ui.oa||'').trim(),ui.od].join('|');
 function setOb(id,s,c){const k=okey();db.obs[k]=db.obs[k]||{};const r=db.obs[k][id]=db.obs[k][id]||{};if(s!==null)r.s=r.s==s?0:s;if(c!==null&&c!==undefined)r.c=c;save();if(s!==null)render()}
