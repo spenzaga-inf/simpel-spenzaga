@@ -52,6 +52,7 @@ nav.bn .on{color:var(--pri);background:var(--soft)}
 .lg header,.lg nav.bn,.lg #dr{display:none}
 .tg{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#172036;color:#fff;padding:10px 18px;border-radius:99px;font-weight:700;z-index:20}
 @media print{header,nav.bn,#dr,#ov,.np{display:none!important}body{background:#fff;color:#000}.card{box-shadow:none}}
+.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin-top:2px;border:0;background:none;font-size:18px;padding:8px 10px;color:var(--mut);cursor:pointer}
 .tag#sy{font-size:12px;padding:9px 13px;cursor:pointer;white-space:nowrap}
 .chip.sel{background:var(--pri);color:#fff;border-color:transparent}.lg main{padding-top:4px;max-width:400px}
 @media(min-width:900px){
@@ -204,7 +205,7 @@ const sha=async s=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEnc
 const SYT={'⏳':'⏳ Memuat…','✓':'✓ Tersinkron','⚠':'⚠ Gagal'},syl=()=>SYT[SY]||(API?'☁️ Sinkron':'Lokal');const setSy=t=>{SY=t;const e=$('#sy');if(e)e.textContent=syl()};
 function loginHtml(){return `<button class="ib" data-tb style="position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:16px" onclick="toggleTheme()"></button>
 <div style="text-align:center;margin:34px 0 18px"><img src="${LOGO}" height="120" alt="Logo SMP Negeri 1 Purbalingga"><h1 style="margin:12px 0 4px;font-size:30px;font-weight:800;background:linear-gradient(90deg,#4f6bff,#12c4b0);-webkit-background-clip:text;background-clip:text;color:transparent">Simpel Spenzaga</h1><p style="margin:0;color:var(--mut);font-style:italic">“${TAG}”</p></div>
-<div class="card"><b style="font-size:17px">Masuk Guru</b><label style="margin-top:10px">Username (NIP)<input id="ln" autocomplete="username"></label><label>Password<input id="lp" type="password" autocomplete="current-password"></label>${API0?'':`<label>URL Apps Script (isi sekali)<input id="la" value="${esc(API)}" placeholder="https://script.google.com/macros/s/.../exec"></label>`}<button class="btn" onclick="login()">Masuk</button><p style="color:var(--mut);font-size:13px">Akun dibuat oleh admin sekolah. Lupa password? Hubungi admin atau Kurikulum.</p></div>`}
+<div class="card"><b style="font-size:17px">Masuk Guru</b><label style="margin-top:10px">Username (NIP)<input id="ln" autocomplete="username"></label><label>Password${eyeF('lp','current-password')}</label>${API0?'':`<label>URL Apps Script (isi sekali)<input id="la" value="${esc(API)}" placeholder="https://script.google.com/macros/s/.../exec"></label>`}<button class="btn" onclick="login()">Masuk</button><p style="color:var(--mut);font-size:13px">Akun dibuat oleh admin sekolah. Lupa password? Hubungi admin atau Kurikulum.</p></div>`}
 async function login0(){const nip=$('#ln').value.trim(),pw=$('#lp').value;
  if(!nip||!pw)return toast('Isi username dan password');
  const u=$('#la');if(u){API=u.value.trim();W('guruku_api',API)}
@@ -212,7 +213,7 @@ async function login0(){const nip=$('#ln').value.trim(),pw=$('#lp').value;
  try{if(!API)throw 0;const r=await post({act:'login',nip,pw});if(!r.ok)return toast(r.err);nama=r.nama;role=r.role;tok=r.tok;wajib=r.wajib;r0=r}
  catch(e){return toast(API?'Tidak bisa terhubung ke server':'Server belum diatur')}
  S={nip,nama,tok,role};if(wajib)S.wajib=1;W('guruku_sess',S);
- db=Object.assign({},def,L(K+nip)||{});db.me=db.me||nama;
+ db=Object.assign({},def,L(K+nip)||{});db.theme=L('guruku_theme')||db.theme;db.me=db.me||nama;
  if(r0)applyPull(r0,1);render();toast('Selamat datang, '+nama)}
 function applyPull(r,q){if(r.json){const d=JSON.parse(r.json);if((d.ts||0)>(db.ts||0)){db=Object.assign({},def,d);W(K+S.nip,db);if(!q)toast('Data terbaru ditarik')}}applyMaster(r)}
 async function login(){const b=document.querySelector('.card .btn');if(b){b.disabled=true;b.textContent='Memuat data…'}try{await login0()}finally{if(b){b.disabled=false;b.textContent='Masuk'}}}
@@ -281,7 +282,9 @@ function saveGr(){save();ui.gdone=1;render();scrollTo(0,0)}
 const P_nilai=P.nilai;P.nilai=()=>ui.gdone?`<div class="card" style="text-align:center"><div style="font-size:40px">✅</div><b>Nilai ${esc(ui.title)} tersimpan</b><p style="color:var(--mut)">${esc(nm('cls',ui.cid))} · ${esc(nm('sub',ui.mid))}</p><button class="btn" onclick="ui.title='';ui.gdone=0;render()">+ Input nilai lagi</button><button class="btn g" onclick="ui.gdone=0;render()">Ubah nilai ini</button></div>`:P_nilai();
 const csvX=()=>{if(window.XLSX){try{const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(ui.rows),String(ui.type).slice(0,30));XLSX.writeFile(w,'rekap-'+ui.type+'-'+ui.month+'.xlsx');return}catch(e){}}csv0()};
 const jm=s=>ui.cid==s.cid&&ui.ket=='Hadir'&&(s.mid=='Kokurikuler'?ui.jj=='Kokurikuler':ui.jj!='Kokurikuler'&&ui.mid==s.mid)&&[...(ui.jam||[])].sort((a,b)=>a-b).join()==(s.jam||[]).join();
-const pwHtml=w=>`<div class="card"${w?' style="margin-top:34px"':''}><b style="font-size:17px">🔒 Ganti password</b><p style="color:var(--mut);margin:6px 0 4px">${w?'Demi keamanan, password sementara dari admin wajib diganti sebelum memakai aplikasi.':'Gunakan minimal 8 karakter.'}</p><label>${w?'Password sementara (dari admin)':'Password lama'}<input id="pl" type="password" autocomplete="current-password"></label><label>Password baru (minimal 8 karakter)<input id="pb" type="password" autocomplete="new-password"></label><label>Ulangi password baru<input id="pu" type="password" autocomplete="new-password"></label><button class="btn" onclick="gantiPw()">Simpan password</button>${w?'<button class="btn g" onclick="logout()">Keluar</button>':''}</div>`;
+function eye(id,b){const i=document.getElementById(id),h=i.type=='password';i.type=h?'text':'password';b.textContent=h?'🙈':'👁️'}
+const eyeF=(id,ac)=>`<span style="position:relative;display:block"><input id="${id}" type="password" autocomplete="${ac}" style="padding-right:46px"><button type="button" class="eye" onclick="eye('${id}',this)" aria-label="Lihat atau sembunyikan password">👁️</button></span>`;
+const pwHtml=w=>`<div class="card"${w?' style="margin-top:34px"':''}><b style="font-size:17px">🔒 Ganti password</b><p style="color:var(--mut);margin:6px 0 4px">${w?'Demi keamanan, password sementara dari admin wajib diganti sebelum memakai aplikasi.':'Gunakan minimal 8 karakter.'}</p><label>${w?'Password sementara (dari admin)':'Password lama'}${eyeF('pl','current-password')}</label><label>Password baru (minimal 8 karakter)${eyeF('pb','new-password')}</label><label>Ulangi password baru${eyeF('pu','new-password')}</label><button class="btn" onclick="gantiPw()">Simpan password</button>${w?'<button class="btn g" onclick="logout()">Keluar</button>':''}</div>`;
 async function gantiPw(){const l=$('#pl').value,b=$('#pb').value,u=$('#pu').value;
  if(!l||!b)return toast('Isi semua kolom');if(b.length<8)return toast('Password baru minimal 8 karakter');if(b!==u)return toast('Ulangi password tidak sama');
  try{const r=await post({act:'pw',nip:S.nip,tok:S.tok,lama:l,baru:b});if(!r.ok)return toast(r.err||'Gagal mengganti password');S.tok=r.tok;delete S.wajib;W('guruku_sess',S);toast('Password berhasil diganti');render();pull(1).then(render)}catch(e){toast('Tidak bisa terhubung ke server')}}
