@@ -95,7 +95,7 @@ const need=(w,p)=>`<div class="empty">Belum ada data ${w}.<br><button class="btn
 const stuOf=()=>db.stu.filter(s=>s.cid==ui.cid);
 function go(p){ui.gdone=0;page=p;document.getElementById('app').classList.remove('open');scrollTo(0,0);render();if(p=='mon')loadMon()}
 function render(){
- applyTheme();document.getElementById('app').classList.toggle('lg',!S);if(!S){$('#main').innerHTML=loginHtml();applyTheme();return}
+ applyTheme();document.getElementById('app').classList.toggle('lg',!S||!!S.wajib);if(S&&S.wajib){$('#main').innerHTML=pwHtml(1);return}if(!S){$('#main').innerHTML=loginHtml();applyTheme();return}
  if(S.role=='kepsek'&&page!='set')page='mon';if(page=='mon'&&!ui.mon&&!ui.tried)loadMon();
  $('#sy').textContent=syl();cur();const n=NAV.find(x=>x[0]==page);$('#ttl').textContent=n[2];
  $('#main').innerHTML=P[page]();
@@ -198,7 +198,7 @@ const bkc=()=>{try{navigator.clipboard.writeText(JSON.stringify(db)).then(()=>to
 function imp(t){try{db=Object.assign({},def,JSON.parse(t));save();render();toast('Data dipulihkan')}catch(e){toast('Format backup tidak valid')}}
 const rs=()=>imp($('#rs').value),rf=f=>f&&f.text().then(imp);
 function rset(b){if(b.dataset.s){db=Object.assign({},def,{cls:[],stu:[],sub:[],sch:[],att:{},gr:{},jur:[],cat:[],gw:[],obs:{}});save();render();toast('Data dihapus')}else{b.dataset.s=1;b.textContent='Tap lagi untuk konfirmasi'}}
-const post=b=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)}).then(r=>r.json()).then(r=>{if(r&&r.auth)expire();return r});
+const post=b=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)}).then(r=>r.json()).then(r=>{if(r&&r.auth)expire();if(r&&r.wajib&&S&&!S.wajib){S.wajib=1;W('guruku_sess',S);render()}return r});
 function expire(){if(!S)return;toast('Sesi berakhir, silakan masuk lagi');S=null;localStorage.removeItem('guruku_sess');db=Object.assign({},def);page='home';render()}
 const sha=async s=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of s)h=(h*33^c.charCodeAt(0))>>>0;return 'x'+h}};
 const SYT={'⏳':'⏳ Memuat…','✓':'✓ Tersinkron','⚠':'⚠ Gagal'},syl=()=>SYT[SY]||(API?'☁️ Sinkron':'Lokal');const setSy=t=>{SY=t;const e=$('#sy');if(e)e.textContent=syl()};
@@ -208,10 +208,10 @@ function loginHtml(){return `<button class="ib" data-tb style="position:fixed;to
 async function login0(){const nip=$('#ln').value.trim(),pw=$('#lp').value;
  if(!nip||!pw)return toast('Isi username dan password');
  const u=$('#la');if(u){API=u.value.trim();W('guruku_api',API)}
- let nama,role,r0,tok;
- try{if(!API)throw 0;const r=await post({act:'login',nip,pw});if(!r.ok)return toast(r.err);nama=r.nama;role=r.role;tok=r.tok;r0=r}
+ let nama,role,r0,tok,wajib;
+ try{if(!API)throw 0;const r=await post({act:'login',nip,pw});if(!r.ok)return toast(r.err);nama=r.nama;role=r.role;tok=r.tok;wajib=r.wajib;r0=r}
  catch(e){return toast(API?'Tidak bisa terhubung ke server':'Server belum diatur')}
- S={nip,nama,tok,role};W('guruku_sess',S);
+ S={nip,nama,tok,role};if(wajib)S.wajib=1;W('guruku_sess',S);
  db=Object.assign({},def,L(K+nip)||{});db.me=db.me||nama;
  if(r0)applyPull(r0,1);render();toast('Selamat datang, '+nama)}
 function applyPull(r,q){if(r.json){const d=JSON.parse(r.json);if((d.ts||0)>(db.ts||0)){db=Object.assign({},def,d);W(K+S.nip,db);if(!q)toast('Data terbaru ditarik')}}applyMaster(r)}
@@ -281,5 +281,10 @@ function saveGr(){save();ui.gdone=1;render();scrollTo(0,0)}
 const P_nilai=P.nilai;P.nilai=()=>ui.gdone?`<div class="card" style="text-align:center"><div style="font-size:40px">✅</div><b>Nilai ${esc(ui.title)} tersimpan</b><p style="color:var(--mut)">${esc(nm('cls',ui.cid))} · ${esc(nm('sub',ui.mid))}</p><button class="btn" onclick="ui.title='';ui.gdone=0;render()">+ Input nilai lagi</button><button class="btn g" onclick="ui.gdone=0;render()">Ubah nilai ini</button></div>`:P_nilai();
 const csvX=()=>{if(window.XLSX){try{const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(ui.rows),String(ui.type).slice(0,30));XLSX.writeFile(w,'rekap-'+ui.type+'-'+ui.month+'.xlsx');return}catch(e){}}csv0()};
 const jm=s=>ui.cid==s.cid&&ui.ket=='Hadir'&&(s.mid=='Kokurikuler'?ui.jj=='Kokurikuler':ui.jj!='Kokurikuler'&&ui.mid==s.mid)&&[...(ui.jam||[])].sort((a,b)=>a-b).join()==(s.jam||[]).join();
+const pwHtml=w=>`<div class="card"${w?' style="margin-top:34px"':''}><b style="font-size:17px">🔒 Ganti password</b><p style="color:var(--mut);margin:6px 0 4px">${w?'Demi keamanan, password sementara dari admin wajib diganti sebelum memakai aplikasi.':'Gunakan minimal 8 karakter.'}</p><label>${w?'Password sementara (dari admin)':'Password lama'}<input id="pl" type="password" autocomplete="current-password"></label><label>Password baru (minimal 8 karakter)<input id="pb" type="password" autocomplete="new-password"></label><label>Ulangi password baru<input id="pu" type="password" autocomplete="new-password"></label><button class="btn" onclick="gantiPw()">Simpan password</button>${w?'<button class="btn g" onclick="logout()">Keluar</button>':''}</div>`;
+async function gantiPw(){const l=$('#pl').value,b=$('#pb').value,u=$('#pu').value;
+ if(!l||!b)return toast('Isi semua kolom');if(b.length<8)return toast('Password baru minimal 8 karakter');if(b!==u)return toast('Ulangi password tidak sama');
+ try{const r=await post({act:'pw',nip:S.nip,tok:S.tok,lama:l,baru:b});if(!r.ok)return toast(r.err||'Gagal mengganti password');S.tok=r.tok;delete S.wajib;W('guruku_sess',S);toast('Password berhasil diganti');render();pull(1).then(render)}catch(e){toast('Tidak bisa terhubung ke server')}}
+const P_set=P.set;P.set=()=>P_set()+pwHtml(0);
 render();if(S)pull(1).then(render);
 </script></body></html>
