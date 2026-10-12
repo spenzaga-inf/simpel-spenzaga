@@ -296,14 +296,14 @@ P.wk=()=>{const wk=db.wk||[];if(!wk.length)return P_wk();ui.wkc=wk.includes(ui.w
  return `<div class="card"><div class="chips" style="flex-wrap:wrap">${[['abs','Absensi harian'],['jw','Jurnal Wali Kelas']].map(x=>`<button class="chip${t==x[0]?' sel':''}" style="width:auto;padding:0 14px" onclick="ui.wt='${x[0]}';render()">${x[1]}</button>`).join('')}</div></div>`+(t=='jw'?JW():P_wk())};
 function JW(){const f=JWF(),c=ui.wkc,L=(db.jw||[]).filter(x=>x.cid==c).sort((a,b)=>(b.d+b.t).localeCompare(a.d+a.t));
 return `<div class="card"><b>Jurnal Wali Kelas ${esc(c)}</b>
-<div class="row2"><label>Tanggal<input type="date" value="${f.d}" onchange="ui.jwf.d=this.value;render()"></label><label>Waktu<input type="time" value="${f.t}" oninput="ui.jwf.t=this.value"></label></div>
+<label>Tanggal<input type="date" value="${f.d}" onchange="ui.jwf.d=this.value;render()"></label>
 <small style="color:var(--mut)">${esc(hari(f.d))}</small>
 <label>Kegiatan / aktivitas perwalian<textarea rows="2" oninput="ui.jwf.keg=this.value">${esc(f.keg)}</textarea></label>
 <b style="display:block;margin-top:10px">Murid tidak berangkat</b>
 <div class="row2" style="grid-template-columns:repeat(3,1fr)">${[['s','Sakit'],['i','Izin'],['a','Alpa']].map(x=>`<label>${x[1]}<input type="number" min="0" inputmode="numeric" value="${esc(String(f[x[0]]))}" oninput="ui.jwf.${x[0]}=this.value"></label>`).join('')}</div>
 <button class="btn g" onclick="jwAbs()">⬇ Ambil dari absensi harian</button>
 <label>Refleksi / catatan wali kelas<textarea rows="3" oninput="ui.jwf.ref=this.value">${esc(f.ref)}</textarea></label>
-<button class="btn" onclick="saveJW()">💾 Simpan jurnal</button></div>`+(L.length?`<h3>Riwayat jurnal</h3>`+L.map(x=>`<div class="card"><b>${esc(hari(x.d))}${x.t?' · '+esc(x.t):''}</b><p style="margin:6px 0">${esc(x.keg)}</p><small style="color:var(--mut)">Tidak berangkat: S ${x.s||0} · I ${x.i||0} · A ${x.a||0}</small>${x.ref?`<p style="margin:6px 0 0;color:var(--mut)">${esc(x.ref)}</p>`:''}<button class="btn g" onclick="delJW('${x.id}')">Hapus</button></div>`).join(''):'')}
+<button class="btn" onclick="saveJW()">💾 Simpan jurnal</button></div>`+(L.length?`<h3>Riwayat jurnal</h3>`+L.map(x=>`<div class="card"><b>${esc(hari(x.d))}</b><p style="margin:6px 0">${esc(x.keg)}</p><small style="color:var(--mut)">Tidak berangkat: S ${x.s||0} · I ${x.i||0} · A ${x.a||0}</small>${x.ref?`<p style="margin:6px 0 0;color:var(--mut)">${esc(x.ref)}</p>`:''}<button class="btn g" onclick="delJW('${x.id}')">Hapus</button></div>`).join(''):'')}
 function jwAbs(){const f=JWF(),a=db.att[[f.d,ui.wkc,'harian'].join('|')];if(!a)return toast('Absensi harian pada tanggal ini belum disimpan');const n=x=>Object.values(a).filter(v=>v==x).length;f.s=n('S');f.i=n('I');f.a=n('A');render()}
 function saveJW(){const f=JWF();if(!f.keg.trim())return toast('Isi kegiatan perwalian');db.jw=db.jw||[];db.jw.push({id:uid(),cid:ui.wkc,d:f.d,t:f.t,keg:f.keg.trim(),s:+f.s||0,i:+f.i||0,a:+f.a||0,ref:f.ref.trim()});ui.jwf={d:f.d,t:'',keg:'',s:'',i:'',a:'',ref:''};save();render();toast('Jurnal wali kelas tersimpan')}
 function delJW(id){if(!confirm('Hapus jurnal ini?'))return;db.jw=(db.jw||[]).filter(x=>x.id!=id);save();render()}
