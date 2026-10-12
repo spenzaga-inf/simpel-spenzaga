@@ -222,17 +222,18 @@ async function pull(q){if(!API||!S)return;setSy('⏳');try{const r=await post({a
 function push(d){if(!API||!S)return;clearTimeout(T);setSy('⏳');T=setTimeout(doPush,d?3000:0)}
 async function doPush(){try{const r=await post({act:'push',nip:S.nip,nama:S.nama,tok:S.tok,json:JSON.stringify(Object.assign({},db,{cls:[],stu:[],mb:[]})),flat:flat()});setSy(r.ok?'✓':'⚠');return r.ok}catch(e){setSy('⚠')}}
 async function doSync(){if(!API)return toast('Server belum diatur');await pull();const ok=await doPush();render();toast(ok?'Sinkron selesai':'Gagal sinkron')}
-function flat(){const g=S.nama,n=S.nip,A=[],N=[],J=[],PD=[],OB=[];
+function flat(){const g=S.nama,n=S.nip,A=[],N=[],J=[],PD=[],OB=[],JW=[];
  Object.keys(db.att).forEach(k=>{const[d,c,m]=k.split('|');Object.entries(db.att[k]).forEach(([s,v])=>v&&A.push([n,g,d,nm('cls',c),m=='harian'?'Harian':nm('sub',m),nm('stu',s),v]))});
  Object.keys(db.gr).forEach(k=>{const[c,m,t]=k.split('|');Object.entries(db.gr[k]).forEach(([s,v])=>v!==''&&N.push([n,g,nm('cls',c),nm('sub',m),t,nm('stu',s),v]))});
  db.jur.forEach(j=>J.push([n,g,j.date,j.cid?nm('cls',j.cid):'',j.mid?nm('sub',j.mid):'',(j.jam||[]).join(','),j.ket||'Hadir',j.mat,j.keg]));
  db.gw.forEach(x=>{const m=db.mb.find(b=>b.nis==x.nis)||{};PD.push([n,g,x.date,x.nis,m.nama||'',m.kelas||'',x.aspek,x.cat,x.tl])});
  Object.keys(db.obs||{}).forEach(k=>{const[t,c,a,dk]=k.split('|'),dm=(db.dim||[]).find(x=>x.k==dk);Object.entries(db.obs[k]).forEach(([id,v])=>{if(v.s||v.c)OB.push([n,g,t,c,a,id,nm('stu',id),dm?dm.n:dk,v.s||'',v.c||''])})});
- return{Absensi:A,Nilai:N,Jurnal:J,Pendampingan:PD,Observasi:OB}}
+ (db.jw||[]).forEach(x=>JW.push([n,g,x.d,x.t||'',x.cid,x.keg,x.s||0,x.i||0,x.a||0,x.ref||'']));
+ return{Absensi:A,Nilai:N,Jurnal:J,Pendampingan:PD,Observasi:OB,JurnalWali:JW}}
 const kset=()=>`<div class="card"><label>Tema tampilan<select onchange="db.theme=this.value;W('guruku_theme',db.theme);save();applyTheme()"><option value="dark" ${db.theme!='light'?'selected':''}>🌙 Gelap</option><option value="light" ${db.theme=='light'?'selected':''}>☀️ Terang</option></select></label></div><div class="card"><b>👤 Akun</b><p style="color:var(--mut);margin:6px 0">${esc(S.nama)}<br>Kepala Sekolah</p><button class="btn g" onclick="logout()">Keluar</button></div>`;
 P.set=()=>S.role=='kepsek'?kset():P.set0();
 const MAPEL=['Bahasa Indonesia','PAI & Budi Pekerti','PAK & Budi Pekerti','Katolik & Budi Pekerti','Matematika','Pendidikan Pancasila','Bahasa Inggris','Prakarya','Seni Musik','Seni Rupa','IPA','PJOK','IPS','Bahasa Jawa','Informatika','BK'];
-function applyMaster(r){if(r.mb)db.mb=r.mb;db.wk=r.wk||[];const m=r.mst;
+function applyMaster(r){if(r.mb)db.mb=r.mb;db.wk=r.wk||[];db.ag=r.ag||'';const m=r.mst;
  if(m&&m.kls.length){if(!db.master){if(Object.keys(db.att).length||Object.keys(db.gr).length)db.pre={att:db.att,gr:db.gr};db.att={};db.gr={};db.sch=[]}
   db.sch=db.sch.filter(x=>m.kls.includes(x.cid));db.jur.forEach(j=>{if(j.cid&&!m.kls.includes(j.cid))j.cid=''});
   const mine=new Set([...(r.jd||[]).map(x=>x[2]),...(r.wk||[])]),ok=k=>!mine.size||mine.has(k);db.cls=m.kls.filter(ok).map(k=>({id:k,name:k}));db.stu=m.stu.filter(x=>ok(x[2])).map(x=>({id:x[0],cid:x[2],name:x[1],gw:x[3],ag:x[4]||''}));db.master=1;
@@ -245,7 +246,7 @@ function applyJd(){const g={},out=[];
  db.jd.forEach(x=>{const k=x[0]+'|'+x[2]+'|'+x[4];(g[k]=g[k]||{day:x[0],cid:x[2],mid:x[4],jam:[]}).jam.push(x[1])});
  Object.values(g).forEach(o=>{o.jam.sort((a,b)=>a-b);let s=[o.jam[0]];for(let i=1;i<o.jam.length;i++){if(o.jam[i]==o.jam[i-1]+1)s.push(o.jam[i]);else{out.push(mk(o,s));s=[o.jam[i]]}}out.push(mk(o,s))});
  db.sch=out;const ms=[...new Set(db.jd.map(x=>x[4]).filter(m=>m!='Kokurikuler'))];db.sub=ms.map(n=>({id:n,name:n}))}
-const stuM=f=>{const m=(f||db.mode=='mapel')?String(ui.mid||''):'',a=s=>s.ag||'',L=stuOf();if(/^PAK/i.test(m))return L.filter(s=>/kristen/i.test(a(s)));if(/^Katolik/i.test(m))return L.filter(s=>/katolik/i.test(a(s)));if(/^PAI/i.test(m))return L.filter(s=>!/kristen|katolik/i.test(a(s)));return L};
+const stuM=f=>{const m=(f||db.mode=='mapel')?String(ui.mid||''):'',a=s=>s.ag||'',L=stuOf(),AG=String(db.ag||'').toLowerCase(),re=/islam/.test(AG)?/islam/i:/katol/.test(AG)?/katol/i:/kristen|protestan/.test(AG)?/kristen|protestan/i:null;if(re&&m&&m!='Kokurikuler')return L.filter(s=>re.test(a(s)));if(/^PAK/i.test(m))return L.filter(s=>/kristen/i.test(a(s)));if(/^Katolik/i.test(m))return L.filter(s=>/katolik/i.test(a(s)));if(/^PAI/i.test(m))return L.filter(s=>!/kristen|katolik/i.test(a(s)));return L};
 const P_jad=P.jadwal;
 P.jadwal=()=>{if(!(db.jd&&db.jd.length))return P_jad();const D=days.slice(1,7),t=days[new Date().getDay()];ui.jh=D.includes(ui.jh)?ui.jh:(D.includes(t)?t:D[0]);const L=db.sch.filter(s=>s.day==ui.jh).sort((a,b)=>a.jam[0]-b.jam[0]);
 return `<div class="card"><div class="chips" style="flex-wrap:wrap">${D.map(d=>`<button class="chip${ui.jh==d?' sel':''}" style="width:auto;padding:0 14px" onclick="ui.jh='${d}';render()">${d}</button>`).join('')}</div></div>`+(L.map(s=>`<div class="item"><div class="av">${s.day.slice(0,2)}</div><div class="grow"><b>${esc(s.mid)}</b><small>${s.time} · ${esc(s.cid)}</small></div></div>`).join('')||`<div class="empty">Tidak ada jadwal pada hari ${ui.jh}.</div>`)};
@@ -290,5 +291,21 @@ async function gantiPw(){const l=$('#pl').value,b=$('#pb').value,u=$('#pu').valu
  if(!l||!b)return toast('Isi semua kolom');if(b.length<8)return toast('Password baru minimal 8 karakter');if(b!==u)return toast('Ulangi password tidak sama');
  try{const r=await post({act:'pw',nip:S.nip,tok:S.tok,lama:l,baru:b});if(!r.ok)return toast(r.err||'Gagal mengganti password');S.tok=r.tok;delete S.wajib;W('guruku_sess',S);toast('Password berhasil diganti');render();pull(1).then(render)}catch(e){toast('Tidak bisa terhubung ke server')}}
 const P_set=P.set;P.set=()=>P_set()+pwHtml(0);
+const P_wk=P.wk,JWF=()=>ui.jwf=ui.jwf||{d:today(),t:'',keg:'',s:'',i:'',a:'',ref:''},hari=d=>new Date(d+'T12:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+P.wk=()=>{const wk=db.wk||[];if(!wk.length)return P_wk();ui.wkc=wk.includes(ui.wkc)?ui.wkc:wk[0];const t=ui.wt||'abs';
+ return `<div class="card"><div class="chips" style="flex-wrap:wrap">${[['abs','Absensi harian'],['jw','Jurnal Wali Kelas']].map(x=>`<button class="chip${t==x[0]?' sel':''}" style="width:auto;padding:0 14px" onclick="ui.wt='${x[0]}';render()">${x[1]}</button>`).join('')}</div></div>`+(t=='jw'?JW():P_wk())};
+function JW(){const f=JWF(),c=ui.wkc,L=(db.jw||[]).filter(x=>x.cid==c).sort((a,b)=>(b.d+b.t).localeCompare(a.d+a.t));
+return `<div class="card"><b>Jurnal Wali Kelas ${esc(c)}</b>
+<div class="row2"><label>Tanggal<input type="date" value="${f.d}" onchange="ui.jwf.d=this.value;render()"></label><label>Waktu<input type="time" value="${f.t}" oninput="ui.jwf.t=this.value"></label></div>
+<small style="color:var(--mut)">${esc(hari(f.d))}</small>
+<label>Kegiatan / aktivitas perwalian<textarea rows="2" oninput="ui.jwf.keg=this.value">${esc(f.keg)}</textarea></label>
+<b style="display:block;margin-top:10px">Murid tidak berangkat</b>
+<div class="row2" style="grid-template-columns:repeat(3,1fr)">${[['s','Sakit'],['i','Izin'],['a','Alpa']].map(x=>`<label>${x[1]}<input type="number" min="0" inputmode="numeric" value="${esc(String(f[x[0]]))}" oninput="ui.jwf.${x[0]}=this.value"></label>`).join('')}</div>
+<button class="btn g" onclick="jwAbs()">⬇ Ambil dari absensi harian</button>
+<label>Refleksi / catatan wali kelas<textarea rows="3" oninput="ui.jwf.ref=this.value">${esc(f.ref)}</textarea></label>
+<button class="btn" onclick="saveJW()">💾 Simpan jurnal</button></div>`+(L.length?`<h3>Riwayat jurnal</h3>`+L.map(x=>`<div class="card"><b>${esc(hari(x.d))}${x.t?' · '+esc(x.t):''}</b><p style="margin:6px 0">${esc(x.keg)}</p><small style="color:var(--mut)">Tidak berangkat: S ${x.s||0} · I ${x.i||0} · A ${x.a||0}</small>${x.ref?`<p style="margin:6px 0 0;color:var(--mut)">${esc(x.ref)}</p>`:''}<button class="btn g" onclick="delJW('${x.id}')">Hapus</button></div>`).join(''):'')}
+function jwAbs(){const f=JWF(),a=db.att[[f.d,ui.wkc,'harian'].join('|')];if(!a)return toast('Absensi harian pada tanggal ini belum disimpan');const n=x=>Object.values(a).filter(v=>v==x).length;f.s=n('S');f.i=n('I');f.a=n('A');render()}
+function saveJW(){const f=JWF();if(!f.keg.trim())return toast('Isi kegiatan perwalian');db.jw=db.jw||[];db.jw.push({id:uid(),cid:ui.wkc,d:f.d,t:f.t,keg:f.keg.trim(),s:+f.s||0,i:+f.i||0,a:+f.a||0,ref:f.ref.trim()});ui.jwf={d:f.d,t:'',keg:'',s:'',i:'',a:'',ref:''};save();render();toast('Jurnal wali kelas tersimpan')}
+function delJW(id){if(!confirm('Hapus jurnal ini?'))return;db.jw=(db.jw||[]).filter(x=>x.id!=id);save();render()}
 render();if(S)pull(1).then(render);
 </script></body></html>
